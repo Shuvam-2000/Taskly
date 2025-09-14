@@ -1,19 +1,28 @@
 import mongoose from "mongoose";
 
 const companySchema = new mongoose.Schema({
-    companyName: {
-        type: String,
-        required: true,
-        required: true
-    },
-    industry: {
-        type: String
-    },
-    emailDomain: {
-        type: String,
-        required: true,
-        unique: true
-    },
+  name: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true
+  },
+  domain: {
+    type: String,
+    required: true,
+    unique: true, 
+    lowercase: true
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true, 
+    lowercase: true
+  },
+  password: {
+    type: String,
+    required: true
+  },
 }, { timestamps: true });
 
 const Company = mongoose.model("company", companySchema);
