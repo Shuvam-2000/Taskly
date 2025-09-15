@@ -1,7 +1,9 @@
 import express from "express";
 import cors from "cors";
 import { configDotenv } from "dotenv";
-import "./config/connection.js"
+import "./config/connection.js";
+import adminRoutes from "./routes/admin.route.js";
+import companyRoutes from "./routes/company.route.js";
 
 configDotenv();
 
@@ -19,6 +21,10 @@ app.use(cors());
 app.get('/', (req,res) => {
     res.send("Hello Server Is Running")
 });
+
+// routes
+app.use("/api/admin", adminRoutes);
+app.use("/api/company", companyRoutes);
 
 // run the server
 app.listen(PORT, () => console.log(`Server runing on PORT: ${PORT}`));
