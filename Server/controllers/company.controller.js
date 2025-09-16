@@ -23,7 +23,7 @@ export const registerNewCompany = async (req,res) => {
         // check if company already exists
         const ifCompanyExists = await Company.findOne({ email, name })
 
-        if(!ifCompanyExists) return res.status(404).json({
+        if(ifCompanyExists) return res.status(404).json({
             message: "Company Already Exists",
             success: false
         })
@@ -31,7 +31,7 @@ export const registerNewCompany = async (req,res) => {
         // check if domain is not same
         const checkCompanyDomain = await Company.findOne({ domain })
 
-        if(!checkCompanyDomain) return res.status(404).json({
+        if(checkCompanyDomain) return res.status(404).json({
             message: "Domain Already In Use",
             sucess: false
         })
@@ -44,8 +44,7 @@ export const registerNewCompany = async (req,res) => {
             name,
             email,
             password: hashedPassword,
-            domain,
-            password
+            domain
         })
 
         // save to the db
@@ -54,7 +53,7 @@ export const registerNewCompany = async (req,res) => {
         res.status(201).json({
             message: "Company Registration Suceessful",
             success: true,
-            customer: customer
+            company: company
         })
         
     } catch (error) {
@@ -95,6 +94,7 @@ export const loginCompany = async (req,res) => {
         { 
           companyId: company._id, 
           email: company.email, 
+          domain: company.domain
         },
         process.env.JWT_SECRET,
         { expiresIn: "2h" }
@@ -108,6 +108,7 @@ export const loginCompany = async (req,res) => {
                 id: company._id,
                 name: company.name,
                 email: company.email,
+                domain: company.domain
             },
          });
         
@@ -121,100 +122,73 @@ export const loginCompany = async (req,res) => {
 }
 
 // register new admin
-export const registerNewAdmin = async (req,res) => {
-    try {
-        const companyId = req.compnay?.companyId;
+export const registerNewAdmin = async (req, res) => {
+  try {
+    const companyId = req.company?.companyId;
+    const domain = req.company?.domain;
 
-        if(!companyId) return res.status(404).json({
-            message: "Company Id Not Found",
-            success: false
-        });
+    console.log(domain)
+    console.log(companyId)
 
-        const { name, email, password } = req.body
-
-        if(!name || !email || !password) return res.status(400).json({
-            message: "All Fields Are Required",
-            success: false
-        })
-
-        // check if admin already exists
-        const adminAlreadyExists = await Admin.findOne(( email ))
-
-        if(!adminAlreadyExists) return res.status(400).json({
-            message: "Admin Already Exists",
-            success: false
-        })
-
-        // regsiter new admin
-        const newAdmin = await Admin.create({
-            name,
-            email,
-            password
-        })
-
-        rs.status(201).json({
-            message: "Admin Registered SuccessFully",
-            success: false,
-            admin: newAdmin
-        })
-        
-    } catch (error) {
-        console.error("Error Registering Admin" , error.message)
-        res.status(500).json({
-            message: 'Internal Server Error',
-            success: false
-        })  
+    if (!companyId || !domain) {
+      return res.status(404).json({
+        message: "Company Id or Domain Not Found",
+        success: false,
+      });
     }
-}
 
-// update info of any regsiterd admin
-export const updateAdminInfo = async (req,res) => {
-    try {
-        const companyId = req.company?.companyId;
+    const { name, email, password } = req.body;
 
-        if(!companyId) return res.status(404).json({
-            message: "Company Id Not Found",
-            success: false
-        })
-
-        // get adminId
-        const { adminId } = req.parmas;
-        const { name, email, password} = req.body
-
-        // check if adminId is fetched
-        if(!adminId) return res.status(400).json({
-            message: "Admin Id is Required",
-            success: false
-        })
-
-        // find the admin
-        const admin = await Admin.findById(adminId);
-        if(!admin) return res.status(404).json({
-            message: "Admin Not Found",
-            success: false
-        })
-
-        // update fields only if they are provided
-        if (name) admin.name = name;
-        if (email) admin.email = email;
-        if (password) admin.password = password;
-
-        // save updated admin
-        const updatedAdmin = await admin.save();
-
-        res.status(200).json({
-            message: "Admin updated successfully",
-            success: true,
-            admin: updatedAdmin
-        });
-    } catch (error) {
-        console.error("Error Updating Admin Info" , error.message)
-        res.status(500).json({
-            message: 'Internal Server Error',
-            success: false
-        })  
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        message: "All Fields Are Required",
+        success: false,
+      });
     }
-}
+
+    // ensure email belongs to company domain
+    if (!email.endsWith(`@${domain}`)) {
+      return res.status(400).json({
+        message: `Admin email must belong to @${domain}`,
+        success: false,
+      });
+    }
+
+    // check if admin already exists
+    const adminAlreadyExists = await Admin.findOne({ email });
+
+    if (adminAlreadyExists) {
+      return res.status(400).json({
+        message: "Admin Already Exists",
+        success: false,
+      });
+    }
+
+    // hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // register new admin
+    const newAdmin = await Admin.create({
+      name,
+      email,
+      password: hashedPassword,
+      companyId,
+      domain, // optional
+    });
+
+    return res.status(201).json({
+      message: "Admin Registered Successfully",
+      success: true,
+      admin: newAdmin,
+    });
+  } catch (error) {
+    console.error("Error Registering Admin:", error.message);
+    res.status(500).json({
+      message: "Internal Server Error",
+      success: false,
+    });
+  }
+};
 
 // get all registered admin
 export const getAllRegisteredAdmin = async (req,res) => {

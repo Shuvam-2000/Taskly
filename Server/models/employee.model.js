@@ -15,6 +15,10 @@ const employeeSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    role: {
+        type: String,
+        required: true
+    },
     companyId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'company',
@@ -32,8 +36,8 @@ employeeSchema.pre("save", async function (next) {
   const Company = mongoose.model("company");
   const company = await Company.findById(this.companyId);
 
-  if (company && !this.email.endsWith(`@${company.emailDomain}`)) {
-    throw new Error(`Employee email must belong to @${company.emailDomain}`);
+  if (company && !this.email.endsWith(`@${company.domain}`)) {
+    throw new Error(`Employee email must belong to @${company.domain}`);
   }
   next();
 });

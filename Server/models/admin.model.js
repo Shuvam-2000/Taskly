@@ -29,9 +29,10 @@ adminSchema.pre("save", async function (next) {
   const Company = mongoose.model("company");
   const company = await Company.findById(this.companyId);
 
-  if (company && !this.email.endsWith(`@${company.emailDomain}`)) {
-    throw new Error(`Admin email must belong to @${company.emailDomain}`);
+  if (company && !this.email.endsWith(`@${company.domain}`)) {
+    throw new Error(`Admin email must belong to @${company.domain}`);
   }
+
   next();
 });
 

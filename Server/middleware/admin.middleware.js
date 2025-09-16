@@ -1,10 +1,6 @@
 import jwt from "jsonwebtoken";
-import { configDotenv } from "dotenv";
 
-// load environment variables
-configDotenv();
-
-export const isCompanyLoggedIn = async (req, res, next) => {
+export const isAdminLoggedIn = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -15,21 +11,16 @@ export const isCompanyLoggedIn = async (req, res, next) => {
       });
     }
 
-    // Extract token
     const token = authHeader.split(" ")[1];
 
-    // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Attach company info to request
-    req.company = {
-      companyId: decoded.companyId,
-      domain: decoded.domain,
-      email: decoded.email, 
-    };
+    // attach admin payload from token
+    req.admin = decoded;
 
     next();
   } catch (error) {
+    console.error("Auth Error:", error.message);
     return res.status(401).json({
       message: "Invalid or expired token",
       success: false,

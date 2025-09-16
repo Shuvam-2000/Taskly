@@ -4,9 +4,8 @@ import {
   loginCompany,
   registerNewAdmin,
   registerNewCompany,
-  updateAdminInfo,
 } from "../controllers/company.controller.js";
-import { isCompanLoggedIn } from "../middleware/company.middleware";
+import { isCompanyLoggedIn } from "../middleware/company.middleware.js";
 
 const router = express.Router();
 
@@ -17,12 +16,9 @@ router.post("/register", registerNewCompany);
 router.post("/company-login", loginCompany);
 
 // regsiter new admin
-router.post("/regsiter-admin", isCompanLoggedIn, registerNewAdmin);
-
-// update admin info
-router.put("/update-admin", isCompanLoggedIn, updateAdminInfo);
+router.post("/regsiter-admin", isCompanyLoggedIn, registerNewAdmin);
 
 // get registered admin
-router.get("/get-admin", isCompanLoggedIn, getAllRegisteredAdmin);
+router.get("/get-admin", isCompanyLoggedIn, getAllRegisteredAdmin);
 
 export default router;

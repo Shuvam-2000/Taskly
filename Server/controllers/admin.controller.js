@@ -1,5 +1,7 @@
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
 import Admin from '../models/admin.model.js';
+import Employee from '../models/employee.model.js'
 import { configDotenv } from 'dotenv';
 
 // load environment variables
@@ -55,5 +57,107 @@ export const adminLogin = async (req,res) => {
             message: 'Internal Server Error',
             success: false
         })  
+    }
+}
+
+// register new employee
+export const registerNewEmployee = async (req, res) => {
+  try {
+    const adminId = req.admin?.adminId;
+
+    if (!adminId) {
+      return res.status(404).json({
+        message: "Admin Id Not Found",
+        success: false,
+      });
+    }
+
+    // fetch admin details to get companyId
+    const admin = await Admin.findById(adminId);
+    if (!admin) {
+      return res.status(404).json({
+        message: "Admin Not Found",
+        success: false,
+      });
+    }
+
+    const companyId = admin.companyId;
+
+    const { name, email, password, role } = req.body;
+
+    if (!name || !email || !password || !role) {
+      return res.status(400).json({
+        message: "All fields are required",
+        success: false,
+      });
+    }
+
+    // check for existing employee
+    const ifEmployeeExists = await Employee.findOne({ email });
+    if (ifEmployeeExists) {
+      return res.status(400).json({
+        message: "Employee Already Exists",
+        success: false,
+      });
+    }
+
+    // hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // create employee
+    const employee = new Employee({
+      name,
+      email,
+      password: hashedPassword,
+      role,
+      companyId,
+      adminId,
+    });
+
+    await employee.save();
+
+    res.status(201).json({
+      message: "Employee Registered Successfully",
+      success: true,
+      employee,
+    });
+  } catch (error) {
+    console.error("Error Registering Employee", error.message);
+    res.status(500).json({
+      message: "Internal Server Error",
+      success: false,
+    });
+  }
+};
+
+// get all registered employees
+export const getAllEmployees = async (req,res) => {
+    try {
+       const adminId = req.admin?.adminId;
+
+        if(!adminId) return res.status(404).json({
+            message: "Company Id not Found",
+            success: false
+        })
+
+        // get all employees regsitered
+        const getAllEmployee = await Employee.find({})
+
+        if(getAllEmployee.length === 0) return res.status(400).json({
+            message: "No Employee Registered",
+            success: false
+        })
+
+        res.status(200).json({
+            message: "Here Are All the Regsitered Admin",
+            success: true,
+            employee: getAllEmployee
+        })
+    } catch (error) {
+        console.error("Error Getting All Employee" , error.message)
+        res.status(500).json({
+            message: 'Internal Server Error',
+            success: false
+        }) 
     }
 }
