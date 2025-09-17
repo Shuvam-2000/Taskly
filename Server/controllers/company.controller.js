@@ -1,8 +1,10 @@
 import Company from "../models/company.model.js";
-import Admin from "../models/admin.model.js"
+import Admin from "../models/admin.model.js";
+import Project from "../models/project.model.js";
 import jwt from "jsonwebtoken";
 import bcrypt from 'bcrypt';
 import { configDotenv } from "dotenv";
+import Employee from "../models/employee.model.js";
 
 // load enviroment variables
 configDotenv();
@@ -220,4 +222,125 @@ export const getAllRegisteredAdmin = async (req,res) => {
             success: false
         }) 
     }
+}
+
+// get all registered employee
+export const getAllEmployee = async (req,res) => {
+  try {
+      const companyId = req.company?.companyId
+
+      if(!companyId) return res.status(404).json({
+        message: "Company Id Not Found",
+        success: false
+      })
+
+      // get all employee for company
+      const employee = await Employee.findOne({})
+
+      if(employee.length === 0) return res.status(400).json({
+            message: "No Employee Registered",
+            success: false
+      })
+
+      res.status(200).json({
+            message: "Here Are All the Regsitered Employee",
+            success: true,
+            employee: employee
+      })
+  } catch (error) {
+      console.error("Error Getting All Employee" , error.message)
+      res.status(500).json({
+            message: 'Internal Server Error',
+            success: false
+      }) 
+  }
+}
+
+// create and assign project to a admin
+export const createAndAssignProject = async (req,res) => {
+  try {
+      const companyId = req.company?.companyId;
+
+      if(!companyId) return res.status(404).json({
+          message: "Company Id Not Found",
+          success: false
+      })
+
+      // fetch fields from the frontend
+      const { projectName, projectDescription, adminId } = req.body;
+
+      // check if all fields are given
+      if(!projectName || !projectDescription || !adminId) return res.status(404).json({
+        message: "All Fields Required",
+        success: false
+      })
+
+      // verify that the admin belongs to the particular company
+      const admin = await Admin.findOne({ _id: adminId, companyId });
+      if (!admin) {
+        return res.status(404).json({
+          message: "Admin Not Found in This Company",
+          success: false,
+        });
+      }
+
+      // create the project
+      const project = new Project({
+        projectName,
+        projectDescription,
+        companyId,
+        adminId
+      })
+
+      // save the project to the db
+      await project.save();
+
+      res.status(201).json({
+        message: "Project Created and Assigned SuccessFully",
+        success: true,
+        project: project
+      })
+
+  } catch (error) {
+      console.error("Error Creating Project" , error.message)
+      res.status(500).json({
+          message: 'Internal Server Error',
+          success: false
+      }) 
+  }
+}
+
+// get all projects and assigned admin to the project
+export const getAllProjectCreated = async (req,res) => {
+  try {
+     const companyId = req.company.companyId;
+
+     if(!companyId) return res.status(404).json({
+        message: 'Company Id Not Found',
+        success: false
+      })
+
+      // fetch all projects for this company with the assigned admin
+      const projects = await Project.find({ companyId })
+      .populate("adminId", "name email") 
+      .sort({ createdAt: -1 })
+
+      if(!projects.length) return res.status(404).json({
+        message: "No Projects Found",
+        success: false
+      })
+
+      res.status(200).json({
+        message: "Projects Fetched SuccessFully",
+        success: true,
+        count: projects.length,
+        project: projects
+      })
+  } catch (error) {
+    console.error("Error Getting All Project" , error.message)
+    res.status(500).json({
+          message: 'Internal Server Error',
+          success: false
+    }) 
+  }
 }

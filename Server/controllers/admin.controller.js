@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import Admin from '../models/admin.model.js';
 import Employee from '../models/employee.model.js'
 import { configDotenv } from 'dotenv';
+import Project from '../models/project.model.js';
 
 // load environment variables
 configDotenv();
@@ -160,4 +161,40 @@ export const getAllEmployees = async (req,res) => {
             success: false
         }) 
     }
+}
+
+// get assigned project for admin
+export const getAssignedProject = async (req,res) => {
+  try {
+      const adminId = req.admin?.adminId;
+
+      if(!adminId) return res.status(404).json({
+          message: "Company Id not Found",
+          success: false
+      })
+
+      // fetch projects assigned to the admin
+      const projects = await Project.find({ adminId })
+      .populate("companyId", "name email")
+      .sort({ createdAt: -1 })
+
+      if(!projects.length) return res.status(404).json({
+        message: "No Projects Assigned",
+        success: false
+      })
+
+      res.status(200).json({
+        message: "Assigned Projects Fetched Successfully",
+        success: true,
+        count: projects.length,
+        project: projects
+      });
+
+  } catch (error) {
+      console.error("Error Getting Assigned Projects" , error.message)
+      res.status(500).json({
+            message: 'Internal Server Error',
+            success: false
+      }) 
+  }
 }
