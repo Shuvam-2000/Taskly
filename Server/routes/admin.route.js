@@ -1,6 +1,7 @@
 import express from "express";
 import {
   adminLogin,
+  createTaskForAssignProject,
   getAllEmployees,
   getAssignedProject,
   registerNewEmployee
@@ -20,5 +21,8 @@ router.get("/get-employee", isAdminLoggedIn, getAllEmployees);
 
 // get assigned projects
 router.get("/get-assigned", isAdminLoggedIn, getAssignedProject);
+
+// create task and assign it to a employee
+router.post("/assign-task", isAdminLoggedIn, createTaskForAssignProject);
 
 export default router;

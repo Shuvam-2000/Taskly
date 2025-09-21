@@ -4,6 +4,7 @@ import { configDotenv } from "dotenv";
 import "./config/connection.js";
 import adminRoutes from "./routes/admin.route.js";
 import companyRoutes from "./routes/company.route.js";
+import employeeRoutes from "./routes/employee.routes.js"
 
 configDotenv();
 
@@ -25,6 +26,7 @@ app.get('/', (req,res) => {
 // routes
 app.use("/api/admin", adminRoutes);
 app.use("/api/company", companyRoutes);
+app.use("/api/employee", employeeRoutes);
 
 // run the server
 app.listen(PORT, () => console.log(`Server runing on PORT: ${PORT}`));

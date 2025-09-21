@@ -4,6 +4,7 @@ import Admin from '../models/admin.model.js';
 import Employee from '../models/employee.model.js'
 import { configDotenv } from 'dotenv';
 import Project from '../models/project.model.js';
+import Task from '../models/task.model.js';
 
 // load environment variables
 configDotenv();
@@ -35,7 +36,8 @@ export const adminLogin = async (req,res) => {
         const token = jwt.sign(
         { 
           adminId: admin._id, 
-          email: admin.email, 
+          email: admin.email,
+          companyId: admin.companyId
         },
         process.env.JWT_SECRET,
         { expiresIn: "2h" }
@@ -49,6 +51,7 @@ export const adminLogin = async (req,res) => {
                 id: admin._id,
                 name: admin.name,
                 email: admin.email,
+                companyId: admin.companyId
             },
          });
         
@@ -196,5 +199,86 @@ export const getAssignedProject = async (req,res) => {
             message: 'Internal Server Error',
             success: false
       }) 
+  }
+}
+
+// create task for assigned project and assign the task to a employee
+export const createTaskForAssignProject = async (req,res) => {
+  try {
+    const { title, 
+            description, 
+            priority, 
+            dueDate, 
+            projectId, 
+            assignedTo } = req.body
+
+    // fetching the companyId and the adminId
+    const companyId = req.admin?.companyId
+    const adminId = req.admin?.adminId
+    
+    if (!title || !projectId) return res.status(400).json({
+      message: "Title and ProjectId are required",
+      success: false
+    })
+
+    if(!companyId || !adminId) return res.status(403).json({
+      message: "Company Id and Admin Id is missing",
+      success: false
+    })
+
+    // check if project exists and belong to the same company
+    const project = await Project.findOne({ _id: projectId, companyId })
+    if(!project) return res.status(404).json({
+      message: "Project Not Found",
+      success: false
+    })
+
+    // validate employee
+    let employee = null;
+    if (assignedTo) {
+      employee = await Employee.findOne({ _id: assignedTo, companyId });
+      if (!employee) {
+        return res.status(404).json({
+          message: "Employee not found or not part of this company",
+          success: false,
+        });
+      }
+    }
+
+    // check if employee already has a task nd its not completed
+    const existingTask = await Task.findOne({
+      assignedTo,
+      status: { $ne: "done" },
+    })
+
+    if(existingTask) return res.status(400).json({
+      message: "This employee already has an assigned task",
+      success: false
+    })
+
+    // create new task
+    const task = await Task.create({
+      title,
+      description,
+      priority,
+      dueDate,
+      projectId,
+      companyId,
+      adminId,
+      assignedTo: employee?._id || null,
+    });
+
+    res.status(201).json({
+      message: "Task created successfully",
+      success: true,
+      task: task
+    });
+
+  } catch (error) {
+    console.error("Error Creating Task For Assign Project" , error.message)
+    res.status(500).json({
+      message: 'Internal Server Error',
+      success: false
+    }) 
   }
 }
