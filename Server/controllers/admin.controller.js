@@ -1,68 +1,70 @@
-import jwt from 'jsonwebtoken';
-import bcrypt from 'bcrypt';
-import Admin from '../models/admin.model.js';
-import Employee from '../models/employee.model.js'
-import { configDotenv } from 'dotenv';
-import Project from '../models/project.model.js';
-import Task from '../models/task.model.js';
+import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
+import Admin from "../models/admin.model.js";
+import Employee from "../models/employee.model.js";
+import { configDotenv } from "dotenv";
+import Project from "../models/project.model.js";
+import Task from "../models/task.model.js";
 
 // load environment variables
 configDotenv();
 
 // admin login
-export const adminLogin = async (req,res) => {
-    try {
-        const { email, password } = req.body
+export const adminLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
 
-        if(!email || !password) return res.status(404).json({
-            message: "All Fields Are Required",
-            success: false
-        })
+    if (!email || !password)
+      return res.status(404).json({
+        message: "All Fields Are Required",
+        success: false,
+      });
 
-        // find admin by email
-        const admin = await Admin.findOne({ email });
-        if(!admin) return res.status(400).json({
-            message: "Invalid Credentials",
-            sucess: false
-        })
+    // find admin by email
+    const admin = await Admin.findOne({ email });
+    if (!admin)
+      return res.status(400).json({
+        message: "Invalid Credentials",
+        sucess: false,
+      });
 
-        const isPasswordMatch = await bcrypt.compare(password, admin.password);
+    const isPasswordMatch = await bcrypt.compare(password, admin.password);
 
-        if(!isPasswordMatch) return res.status(400).json({
-            message: "Inavalid Credentials",
-            success: false
-        })
+    if (!isPasswordMatch)
+      return res.status(400).json({
+        message: "Inavalid Credentials",
+        success: false,
+      });
 
-        const token = jwt.sign(
-        { 
-          adminId: admin._id, 
-          email: admin.email,
-          companyId: admin.companyId
-        },
-        process.env.JWT_SECRET,
-        { expiresIn: "2h" }
-        );
+    const token = jwt.sign(
+      {
+        adminId: admin._id,
+        email: admin.email,
+        companyId: admin.companyId,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "2h" }
+    );
 
-         res.status(200).json({
-            message: "Login Successful",
-            success: true,
-            token,
-            admin: {
-                id: admin._id,
-                name: admin.name,
-                email: admin.email,
-                companyId: admin.companyId
-            },
-         });
-        
-    } catch (error) {
-        console.error("Error Admin Login" , error.message)
-        res.status(500).json({
-            message: 'Internal Server Error',
-            success: false
-        })  
-    }
-}
+    res.status(200).json({
+      message: "Login Successful",
+      success: true,
+      token,
+      admin: {
+        id: admin._id,
+        name: admin.name,
+        email: admin.email,
+        companyId: admin.companyId,
+      },
+    });
+  } catch (error) {
+    console.error("Error Admin Login", error.message);
+    res.status(500).json({
+      message: "Internal Server Error",
+      success: false,
+    });
+  }
+};
 
 // register new employee
 export const registerNewEmployee = async (req, res) => {
@@ -135,103 +137,105 @@ export const registerNewEmployee = async (req, res) => {
 };
 
 // get all registered employees
-export const getAllEmployees = async (req,res) => {
-    try {
-       const adminId = req.admin?.adminId;
-
-        if(!adminId) return res.status(404).json({
-            message: "Company Id not Found",
-            success: false
-        })
-
-        // get all employees regsitered
-        const getAllEmployee = await Employee.find({})
-
-        if(getAllEmployee.length === 0) return res.status(400).json({
-            message: "No Employee Registered",
-            success: false
-        })
-
-        res.status(200).json({
-            message: "Here Are All the Regsitered Admin",
-            success: true,
-            employee: getAllEmployee
-        })
-    } catch (error) {
-        console.error("Error Getting All Employee" , error.message)
-        res.status(500).json({
-            message: 'Internal Server Error',
-            success: false
-        }) 
-    }
-}
-
-// get assigned project for admin
-export const getAssignedProject = async (req,res) => {
+export const getAllEmployees = async (req, res) => {
   try {
-      const adminId = req.admin?.adminId;
+    const adminId = req.admin?.adminId;
 
-      if(!adminId) return res.status(404).json({
-          message: "Company Id not Found",
-          success: false
-      })
-
-      // fetch projects assigned to the admin
-      const projects = await Project.find({ adminId })
-      .populate("companyId", "name email")
-      .sort({ createdAt: -1 })
-
-      if(!projects.length) return res.status(404).json({
-        message: "No Projects Assigned",
-        success: false
-      })
-
-      res.status(200).json({
-        message: "Assigned Projects Fetched Successfully",
-        success: true,
-        count: projects.length,
-        project: projects
+    if (!adminId)
+      return res.status(404).json({
+        message: "Company Id not Found",
+        success: false,
       });
 
+    // get all employees regsitered
+    const getAllEmployee = await Employee.find({});
+
+    if (getAllEmployee.length === 0)
+      return res.status(400).json({
+        message: "No Employee Registered",
+        success: false,
+      });
+
+    res.status(200).json({
+      message: "Here Are All the Regsitered Admin",
+      success: true,
+      employee: getAllEmployee,
+    });
   } catch (error) {
-      console.error("Error Getting Assigned Projects" , error.message)
-      res.status(500).json({
-            message: 'Internal Server Error',
-            success: false
-      }) 
+    console.error("Error Getting All Employee", error.message);
+    res.status(500).json({
+      message: "Internal Server Error",
+      success: false,
+    });
   }
-}
+};
+
+// get assigned project for admin
+export const getAssignedProject = async (req, res) => {
+  try {
+    const adminId = req.admin?.adminId;
+
+    if (!adminId)
+      return res.status(404).json({
+        message: "Company Id not Found",
+        success: false,
+      });
+
+    // fetch projects assigned to the admin
+    const projects = await Project.find({ adminId })
+      .populate("companyId", "name email")
+      .sort({ createdAt: -1 });
+
+    if (!projects.length)
+      return res.status(404).json({
+        message: "No Projects Assigned",
+        success: false,
+      });
+
+    res.status(200).json({
+      message: "Assigned Projects Fetched Successfully",
+      success: true,
+      count: projects.length,
+      project: projects,
+    });
+  } catch (error) {
+    console.error("Error Getting Assigned Projects", error.message);
+    res.status(500).json({
+      message: "Internal Server Error",
+      success: false,
+    });
+  }
+};
 
 // create task for assigned project and assign the task to a employee
-export const createTaskForAssignProject = async (req,res) => {
+export const createTaskForAssignProject = async (req, res) => {
   try {
-    const { title, 
-            description, 
-            priority, 
-            dueDate, 
-            projectId, 
-            assignedTo } = req.body
+    const { title, description, priority, dueDate, projectId, assignedTo } =
+      req.body;
 
     // fetching the companyId and the adminId
-    const companyId = req.admin?.companyId
-    const adminId = req.admin?.adminId
-    
-    if (!title || !projectId) return res.status(400).json({
-      message: "Title and ProjectId are required",
-      success: false
-    })
+    const companyId = req.admin?.companyId;
+    const adminId = req.admin?.adminId;
 
-    if(!companyId || !adminId) return res.status(403).json({
-      message: "Company Id and Admin Id is missing",
-      success: false
-    })
+    if (!title || !projectId)
+      return res.status(400).json({
+        message: "Title and ProjectId are required",
+        success: false,
+      });
+
+    if (!companyId || !adminId)
+      return res.status(403).json({
+        message: "Company Id and Admin Id is missing",
+        success: false,
+      });
 
     // check if project exists and belong to the same company
-    const project = await Project.findOne({ _id: projectId, companyId })
-    if(!project) return res.status(404).json({
-      message: "Project Not Found",
-      success: false
-    })
+    const project = await Project.findOne({ _id: projectId, companyId });
+    if (!project)
+      return res.status(404).json({
+        message: "Project Not Found",
+        success: false,
+      });
 
     // validate employee
     let employee = null;
@@ -249,12 +253,13 @@ export const createTaskForAssignProject = async (req,res) => {
     const existingTask = await Task.findOne({
       assignedTo,
       status: { $ne: "done" },
-    })
+    });
 
-    if(existingTask) return res.status(400).json({
-      message: "This employee already has an assigned task",
-      success: false
-    })
+    if (existingTask)
+      return res.status(400).json({
+        message: "This employee already has an assigned task",
+        success: false,
+      });
 
     // create new task
     const task = await Task.create({
@@ -271,14 +276,136 @@ export const createTaskForAssignProject = async (req,res) => {
     res.status(201).json({
       message: "Task created successfully",
       success: true,
-      task: task
+      task: task,
     });
-
   } catch (error) {
-    console.error("Error Creating Task For Assign Project" , error.message)
+    console.error("Error Creating Task For Assign Project", error.message);
     res.status(500).json({
-      message: 'Internal Server Error',
+      message: "Internal Server Error",
+      success: false,
+    });
+  }
+};
+
+// get all employees info , task assigned and task status
+export const getEmployeesTaskInfoAndStatus = async (req, res) => {
+  try {
+    const adminId = req.admin?.adminId;
+
+    if (!adminId)
+      return res.status(404).json({
+        message: "Admin Id not Found",
+        success: false,
+      });
+
+    const companyId = req.admin?.companyId;
+
+    if (!companyId) {
+      return res.status(400).json({
+        message: "Company Id is required",
+        success: false,
+      });
+    }
+
+    // fetch employees of this company only
+    const employees = await Employee.find({ companyId }).select("-password");
+
+    if (!employees || employees.length === 0)
+      return res.status(404).json({
+        message: "No employees found",
+        success: false,
+      });
+
+    // fetch tasks for each employee
+    const employeesWithTasks = await Promise.all(
+      employees.map(async (emp) => {
+        const tasks = await Task.find({ assignedTo: emp._id })
+          .populate("projectId", "name description")
+          .select("title description status");
+
+        return {
+          _id: emp._id,
+          name: emp.name,
+          email: emp.email,
+          role: emp.role,
+          tasks: tasks.map((task) => ({
+            taskId: task._id,
+            title: task.title,
+            description: task.description,
+            status: task.status,
+            project: task.projectId,
+          })),
+        };
+      })
+    );
+
+    res.status(200).json({
+      message: "Employees with tasks and statuses fetched successfully",
+      success: true,
+      employees: employeesWithTasks,
+    });
+  } catch (error) {
+    console.error("Error Getting Employees Task Info", error.message);
+    res.status(500).json({
+      message: "Internal Server Error",
+      success: false,
+    });
+  }
+};
+
+// get tasks detials for admin
+export const getTaskDetailsForAdmin = async (req,res) => {
+  try {
+    const adminId = req.admin?.adminId;
+
+    if (!adminId)
+      return res.status(404).json({
+        message: "Admin Id not Found",
+        success: false,
+      });
+
+    const companyId = req.admin?.companyId;
+
+    if (!companyId) {
+      return res.status(400).json({
+        message: "Company Id is required",
+        success: false,
+      });
+    }
+
+    const { taskId } = req.params;
+
+    if(!taskId) return res.status(400).json({
+      message: "Task Id is required",
       success: false
-    }) 
+    })
+
+    // fetch task details 
+    const task = await Task.findOne({ _id: taskId, companyId })
+      .populate("projectId", "projectName projectDescription")
+      .populate("assignedTo", "name email")
+      .populate("adminId", "name email");
+
+    if (!task) {
+      return res.status(404).json({
+        message: "Task not found for this company",
+        success: false,
+      });
+    }
+
+    res.status(200).json({
+      message: "Task details fetched successfully",
+      success: true,
+      task: task
+    })
+ 
+  } catch (error) {
+    console.error("Error Getting Task Details", error.message);
+    res.status(500).json({
+      message: "Internal Server Error",
+      success: false,
+    });
   }
 }
+
+

@@ -142,3 +142,45 @@ export const updateTaskStatus = async (req,res) => {
         }) 
     }
 }
+
+// get task details for employee
+export const getTaskDetailsForEmployee = async (req,res) => {
+    try {
+        const employeeId = req.employee?.employeeId;
+
+        if(!employeeId) return res.status(403).json({
+            message: "Employee Id Not Found",
+            success: false
+        })
+
+        const { taskId } = req.params;
+
+        if(!taskId) return res.status(400).json({
+            message: "Task Id is required",
+            success: false
+        })
+
+        // fetch task
+        const task = await Task.findOne({ _id: taskId })
+            .populate("projectId", "projectName projectDescription")
+
+        if (!task) {
+            return res.status(404).json({
+                message: "Task not found",
+                success: false,
+            });
+        }
+
+        res.status(200).json({
+            message: "Task details fetched successfully",
+            success: true,
+            task: task
+        });
+    } catch (error) {
+        console.error("Error Getting Task Details For Employee" , error.message)
+        res.status(500).json({
+            message: 'Internal Server Error',
+            success: false
+        }) 
+    }
+}

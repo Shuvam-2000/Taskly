@@ -4,6 +4,8 @@ import {
   createTaskForAssignProject,
   getAllEmployees,
   getAssignedProject,
+  getEmployeesTaskInfoAndStatus,
+  getTaskDetailsForAdmin,
   registerNewEmployee
 } from "../controllers/admin.controller.js";
 import { isAdminLoggedIn } from "../middleware/admin.middleware.js";
@@ -24,5 +26,11 @@ router.get("/get-assigned", isAdminLoggedIn, getAssignedProject);
 
 // create task and assign it to a employee
 router.post("/assign-task", isAdminLoggedIn, createTaskForAssignProject);
+
+// get employee info , task assigned and the status of the task
+router.get("/get-assignedtask", isAdminLoggedIn, getEmployeesTaskInfoAndStatus);
+
+// get task detials for admin
+router.get("/:taskId", isAdminLoggedIn, getTaskDetailsForAdmin);
 
 export default router;
